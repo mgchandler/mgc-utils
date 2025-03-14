@@ -2,7 +2,7 @@
 Functions relating to NDT, which fall outside the scope of being put into Arim (for whatever reason).
 """
 __all__ = [
-    'ply_orientation',
+    "ply_orientation",
 ]
 
 import numpy as np
@@ -75,7 +75,7 @@ def ply_orientation(grid, tfm, p=0.4e-3):
         normal = np.asarray([0, 0, 1]).reshape(-1, 1)
     else:
         raise ValueError(
-            'Too many dimensions in `tfm` - should contain a single 2D or 3D TFM image.'
+            "Too many dimensions in `tfm` - should contain a single 2D or 3D TFM image."
         )
     g1 = (
         # `A` defined s.t. ∫ G1(r) dr = 1
@@ -83,8 +83,8 @@ def ply_orientation(grid, tfm, p=0.4e-3):
         * np.sqrt(np.linalg.det(cov1))
         * np.exp(-mahalanobis(r.transpose(), 0, cov1) / 2).reshape(x.shape)
     )
-    sin_smoothed = convolve(sin, g1, mode='same')
-    cos_smoothed = convolve(cos, g1, mode='same')
+    sin_smoothed = convolve(sin, g1, mode="same")
+    cos_smoothed = convolve(cos, g1, mode="same")
 
     # Compute derivatives:
     if tfm.ndim == 2:
@@ -96,7 +96,7 @@ def ply_orientation(grid, tfm, p=0.4e-3):
         scharr_kern[1, :, :] = np.dot(s.reshape(-1, 1), d.reshape(1, -1)) / 32
     elif tfm.ndim == 3:
         raise NotImplementedError(
-            '3D implementation not yet working - need to work out the Scharr kernel in 3D.'
+            "3D implementation not yet working - need to work out the Scharr kernel in 3D."
         )
         # d = np.asarray([0])
         # s = np.asarray([0])
@@ -104,8 +104,8 @@ def ply_orientation(grid, tfm, p=0.4e-3):
     grad = np.zeros((tfm.ndim, *tfm.shape))
     for dim in range(tfm.ndim):
         grad[dim] = cos_smoothed * convolve(
-            sin_smoothed, scharr_kern[dim], mode='same'
-        ) - sin_smoothed * convolve(cos_smoothed, scharr_kern[dim], mode='same')
+            sin_smoothed, scharr_kern[dim], mode="same"
+        ) - sin_smoothed * convolve(cos_smoothed, scharr_kern[dim], mode="same")
 
     # Create structure tensor
     structure = grad.reshape(tfm.ndim, 1, *tfm.shape) * grad.reshape(
@@ -118,31 +118,35 @@ def ply_orientation(grid, tfm, p=0.4e-3):
         * np.exp(-mahalanobis(r.transpose(), 0, cov2) / 2).reshape(x.shape)
     ).reshape(1, 1, *x.shape)
     # g2 = np.asarray([1]).reshape([1 for _ in structure.shape])
-    structure_smoothed = convolve(structure, g2, mode='same').reshape(
+    structure_smoothed = convolve(structure, g2, mode="same").reshape(
         tfm.ndim, tfm.ndim, -1
     )
 
     # Compute eigenvectors and ply angle - 2D.
-    evecs = np.vstack([
-        2 * structure_smoothed[0, 1],
-        (
-            structure_smoothed[1, 1]
-            - structure_smoothed[0, 0]
-            + np.sqrt(
-                (structure_smoothed[0, 0] - structure_smoothed[1, 1]) ** 2
-                + 4 * structure_smoothed[0, 1] ** 2
-            )
-        ),
-    ]).transpose()
+    evecs = np.vstack(
+        [
+            2 * structure_smoothed[0, 1],
+            (
+                structure_smoothed[1, 1]
+                - structure_smoothed[0, 0]
+                + np.sqrt(
+                    (structure_smoothed[0, 0] - structure_smoothed[1, 1]) ** 2
+                    + 4 * structure_smoothed[0, 1] ** 2
+                )
+            ),
+        ]
+    ).transpose()
     ply_angle = (
         np.arccos(
             np.dot(evecs, normal).squeeze()
             / (np.linalg.norm(evecs, axis=1) * np.linalg.norm(normal))
         )
-        * np.sign([
-            np.linalg.det(np.hstack([normal, evecs[i : i + 1, :].transpose()]))
-            for i in range(evecs.shape[0])
-        ])
+        * np.sign(
+            [
+                np.linalg.det(np.hstack([normal, evecs[i : i + 1, :].transpose()]))
+                for i in range(evecs.shape[0])
+            ]
+        )
     ).reshape(tfm.shape)
 
     return ply_angle

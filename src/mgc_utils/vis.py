@@ -3,7 +3,8 @@ A set of functions which solve different tasks in visualisation. This may be mat
 often, so it's useful to have them all in one place, or other helper functions.
 """
 __all__ = [
-    'plot_complex_tfm', 'opheim_simpl',
+    "plot_complex_tfm",
+    "opheim_simpl",
 ]
 
 from arim.ut import decibel
@@ -14,14 +15,14 @@ from warnings import warn
 
 
 def plot_complex_tfm(
-        tfm,
-        grid,
-        fig_title="",
-        dB=False,
-        show=True,
-        save=False,
-        savename="untitled",
-        savedir=".",
+    tfm,
+    grid,
+    fig_title="",
+    dB=False,
+    show=True,
+    save=False,
+    savename="untitled",
+    savedir=".",
 ):
     # Point is to make a figure. If neither interested in showing or saving, don't bother.
     if not show and not save:
@@ -36,8 +37,9 @@ def plot_complex_tfm(
             grid.zmax * 1e3,
             grid.zmin * 1e3,
         ],
-        vmin=-np.abs(tfm).max(), vmax=np.abs(tfm).max(),
-        cmap='RdBu',
+        vmin=-np.abs(tfm).max(),
+        vmax=np.abs(tfm).max(),
+        cmap="RdBu",
     )
     axs[1].imshow(
         np.imag(tfm.transpose()),
@@ -47,8 +49,9 @@ def plot_complex_tfm(
             grid.zmax * 1e3,
             grid.zmin * 1e3,
         ],
-        vmin=-np.abs(tfm).max(), vmax=np.abs(tfm).max(),
-        cmap='RdBu',
+        vmin=-np.abs(tfm).max(),
+        vmax=np.abs(tfm).max(),
+        cmap="RdBu",
     )
     if dB:
         ima = axs[2].imshow(
@@ -59,8 +62,9 @@ def plot_complex_tfm(
                 grid.zmax * 1e3,
                 grid.zmin * 1e3,
             ],
-            vmin=-40, vmax=0,
-            cmap='viridis',
+            vmin=-40,
+            vmax=0,
+            cmap="viridis",
         )
     else:
         ima = axs[2].imshow(
@@ -71,8 +75,9 @@ def plot_complex_tfm(
                 grid.zmax * 1e3,
                 grid.zmin * 1e3,
             ],
-            vmin=0, vmax=np.abs(tfm).max(),
-            cmap='viridis',
+            vmin=0,
+            vmax=np.abs(tfm).max(),
+            cmap="viridis",
         )
     imp = axs[3].imshow(
         np.angle(tfm.transpose()),
@@ -82,41 +87,58 @@ def plot_complex_tfm(
             grid.zmax * 1e3,
             grid.zmin * 1e3,
         ],
-        vmin=-np.pi, vmax=np.pi,
-        cmap='hsv',
+        vmin=-np.pi,
+        vmax=np.pi,
+        cmap="hsv",
     )
     axs[0].set_title(fig_title)
     [ax.set_xticklabels([]) for ax in axs[:3]]
 
     fig.colorbar(
-        imr, ax=axs[:2], label='(arb)', shrink=.99, aspect=20,
+        imr,
+        ax=axs[:2],
+        label="(arb)",
+        shrink=0.99,
+        aspect=20,
     )
     if dB:
         fig.colorbar(
-            ima, ax=axs[2], label='(dB)', shrink=.99, aspect=10,
+            ima,
+            ax=axs[2],
+            label="(dB)",
+            shrink=0.99,
+            aspect=10,
         )
     else:
         fig.colorbar(
-            ima, ax=axs[2], label='(arb)', shrink=.99, aspect=10,
+            ima,
+            ax=axs[2],
+            label="(arb)",
+            shrink=0.99,
+            aspect=10,
         )
     rad = fig.colorbar(
-        imp, ax=axs[3], label='(rad)', shrink=.99, aspect=10,
-        ticks=[-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi]
+        imp,
+        ax=axs[3],
+        label="(rad)",
+        shrink=0.99,
+        aspect=10,
+        ticks=[-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi],
     )
-    rad.set_ticklabels(['$-\pi$', '$-\pi/2$', '$0$', '$\pi/2$', '$\pi$'])
+    rad.set_ticklabels(["$-\pi$", "$-\pi/2$", "$0$", "$\pi/2$", "$\pi$"])
 
-    axs[-1].set_xlabel('$y$ (mm)')
-    [ax.set_ylabel('$z$ (mm)') for ax in axs]
+    axs[-1].set_xlabel("$y$ (mm)")
+    [ax.set_ylabel("$z$ (mm)") for ax in axs]
     if save:
         if savename == "":
             warn('Warning - no title provided. Saving as "untitled.png".')
             savename = "untitled"
         if savename[-4:] != ".png":
             savename = f"{savename}.png"
-        plt.savefig(os.path.join(savedir, savename), bbox_inches='tight')
+        plt.savefig(os.path.join(savedir, savename), bbox_inches="tight")
     if show:
         plt.show()
-    plt.close('all')
+    plt.close("all")
 
     return
 
@@ -162,9 +184,9 @@ def opheim_simpl(x, y, tol):
     """
     x, y = np.asarray(x), np.asarray(y)
     if x.ndim != 1 or y.ndim != 1:
-        raise ValueError('`x` and `y` must be 1-dimensional ndarrays.')
+        raise ValueError("`x` and `y` must be 1-dimensional ndarrays.")
     if x.shape[0] != y.shape[0]:
-        raise ValueError('`x` and `y` must have the same shape.')
+        raise ValueError("`x` and `y` must have the same shape.")
     mask = np.full(x.shape, False)
     mask[0], mask[-1] = True, True
 

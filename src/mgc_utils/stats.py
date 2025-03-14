@@ -3,7 +3,13 @@ A set of functions performing various statistical tasks. Note that some of these
 which have been edited to add in some features (most commonly, adding an `axes` parameter).
 """
 __all__ = [
-    'auc', 'autocorrelate', 'convolve', 'correlate', 'cov', 'nancov', 'roc',
+    "auc",
+    "autocorrelate",
+    "convolve",
+    "correlate",
+    "cov",
+    "nancov",
+    "roc",
 ]
 
 import numpy as np
@@ -39,7 +45,7 @@ def auc(x, y):
         if np.all(dx <= 0):
             direction = -1
         else:
-            raise ValueError('x is neither increasing nor decreasing : {}.'.format(x))
+            raise ValueError("x is neither increasing nor decreasing : {}.".format(x))
     return direction * np.trapz(y, x)
 
 
@@ -156,9 +162,9 @@ def correlate(in1, in2, mode="same", method="auto", axes=None):
         # with 'valid' mode if in2 is larger than in1, so swap those, too.
         # Don't swap inputs for 'same' mode, since shape of in1 matters.
         swapped_inputs = (
-                (mode == "full")
-                and (in2.size > in1.size)
-                or _inputs_swap_needed(mode, in1.shape, in2.shape, axes=axes)
+            (mode == "full")
+            and (in2.size > in1.size)
+            or _inputs_swap_needed(mode, in1.shape, in2.shape, axes=axes)
         )
 
         if swapped_inputs:
@@ -195,13 +201,7 @@ def correlate(in1, in2, mode="same", method="auto", axes=None):
         raise ValueError("Acceptable method flags are 'auto'," " 'direct', or 'fft'.")
 
 
-def cov(
-        m,
-        varaxis=0,
-        obsaxis=1,
-        dtype=None,
-        pseudo=False
-):
+def cov(m, varaxis=0, obsaxis=1, dtype=None, pseudo=False):
     """
     Alternative implementation of numpy's cov function, which may compute the
     pseudo-covariance matrix (in which Cov[X, X*] is computed instead of
@@ -216,13 +216,13 @@ def cov(
 
     if varaxis != int(varaxis):
         raise ValueError("varaxis must be integer")
-    if varaxis > m.ndim or varaxis < - X.ndim:
+    if varaxis > m.ndim or varaxis < -X.ndim:
         raise ValueError("varaxis must correspond to an axis in m")
     varaxis = varaxis % X.ndim
 
     if obsaxis != int(obsaxis):
         raise ValueError("obsaxis must be integer")
-    if obsaxis > m.ndim or obsaxis < - X.ndim:
+    if obsaxis > m.ndim or obsaxis < -X.ndim:
         raise ValueError("obsaxis must correspond to an axis in m")
     obsaxis = obsaxis % X.ndim
 
@@ -253,9 +253,9 @@ def cov(
     #   `np.einsum('ik,jk->ij', X, X.conj())`. The following code constructs
     #   this signature for X of arbitrary shape, when variables and
     #   observations are in the defined axes.
-    input_signature_1 = ''
-    input_signature_2 = ''
-    output_signature = ''
+    input_signature_1 = ""
+    input_signature_2 = ""
+    output_signature = ""
     t = 0
     for i in range(X.ndim):
         if i not in [varaxis, obsaxis]:
@@ -267,17 +267,16 @@ def cov(
             t += 1
         elif i == varaxis:
             # Reserve "i" and "j" for variable axes
-            input_signature_1 += 'i'
-            input_signature_2 += 'j'
-            output_signature += 'ij'
+            input_signature_1 += "i"
+            input_signature_2 += "j"
+            output_signature += "ij"
         else:
             # Reserve "k" for observation axis.
-            input_signature_1 += 'k'
-            input_signature_2 += 'k'
+            input_signature_1 += "k"
+            input_signature_2 += "k"
 
     c = np.einsum(
-        f'{input_signature_1},{input_signature_2}->{output_signature}',
-        X, X_c
+        f"{input_signature_1},{input_signature_2}->{output_signature}", X, X_c
     )
     c *= np.true_divide(1, fact)
     return c.squeeze()
@@ -388,21 +387,21 @@ def roc(pos, neg, reduce_size=False):
         pos = pos.reshape(-1, 1)
     elif pos.ndim > 2:
         raise ValueError(
-            'pos expected to have 2 dimensions, found {}.'.format(pos.ndim)
+            "pos expected to have 2 dimensions, found {}.".format(pos.ndim)
         )
     elif pos.shape[1] != 1:
         warnings.warn(
-            'pos should only have one feature, currently has {}.'.format(pos.shape[0])
+            "pos should only have one feature, currently has {}.".format(pos.shape[0])
         )
     if neg.ndim < 2:
         neg = neg.reshape(-1, 1)
     elif neg.ndim > 2:
         raise ValueError(
-            'neg expected to have 2 dimensions, found {}.'.format(neg.ndim)
+            "neg expected to have 2 dimensions, found {}.".format(neg.ndim)
         )
     elif neg.shape[1] != 1:
         warnings.warn(
-            'neg should only have one feature, currently has {}.'.format(neg.shape[0])
+            "neg should only have one feature, currently has {}.".format(neg.shape[0])
         )
 
     # # Check weights - leave out for now as working with weights will require

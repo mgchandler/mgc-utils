@@ -24,7 +24,11 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+  "arim",
+  "numpy",
+  "scipy",
+]
 
 [project.urls]
 Documentation = "https://github.com/mgchandler/mgc-utils#readme"
@@ -32,7 +36,7 @@ Issues = "https://github.com/mgchandler/mgc-utils/issues"
 Source = "https://github.com/mgchandler/mgc-utils"
 
 [tool.hatch.version]
-path = "src/mgc_utils/__about__.py"
+path = "src/mgc_utils/__init__.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [

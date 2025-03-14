@@ -2,7 +2,9 @@
 Helper functions which don't sit anywhere nicely.
 """
 __all__ = [
-    'alphanum_key', 'readable_idxs', 'sorted_readable',
+    "alphanum_key",
+    "readable_idxs",
+    "sorted_readable",
 ]
 
 import re
@@ -25,7 +27,7 @@ def alphanum_key(s):
 
     """
     tryint = lambda c: int(c) if c.isdigit() else c
-    return [tryint(c) for c in re.split('([0-9]+)', s)]
+    return [tryint(c) for c in re.split("([0-9]+)", s)]
 
 
 def readable_idxs(unsorted):

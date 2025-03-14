@@ -22,7 +22,10 @@ References
         
 """
 __all__ = [
-    'bounding_ellipse', 'mahalanobis',  'mardia_test', 'transform_observations',
+    "bounding_ellipse",
+    "mahalanobis",
+    "mardia_test",
+    "transform_observations",
 ]
 
 import numpy as np
@@ -59,7 +62,7 @@ def bounding_ellipse(mean, covariance, sigma=1, n=100):
     -------
     ndarray[float], (N, 2)
         Set of points on the ellipse.
-        
+
     Notes
     -----
     This is a function which is intended to aid plotting, therefore it is
@@ -68,15 +71,23 @@ def bounding_ellipse(mean, covariance, sigma=1, n=100):
     """
     mean, covariance = np.squeeze(mean), np.squeeze(covariance)
     if mean.shape != (2,):
-        raise ValueError('`mean` should have length 2; found shape {}'.format(mean.shape))
+        raise ValueError(
+            "`mean` should have length 2; found shape {}".format(mean.shape)
+        )
     mean = mean.reshape(1, 2)
     if covariance.shape != (2, 2):
-        raise ValueError('`covariance` should have shape (2, 2); found shape {}'.format(covariance.shape))
-    
-    unit_circle = np.vstack([
-        np.cos(np.linspace(0, 2*np.pi, n)),
-        np.sin(np.linspace(0, 2*np.pi, n)),
-    ])
+        raise ValueError(
+            "`covariance` should have shape (2, 2); found shape {}".format(
+                covariance.shape
+            )
+        )
+
+    unit_circle = np.vstack(
+        [
+            np.cos(np.linspace(0, 2 * np.pi, n)),
+            np.sin(np.linspace(0, 2 * np.pi, n)),
+        ]
+    )
     lower = cholesky(covariance)
     return sigma * np.dot(lower, unit_circle).transpose() + mean
 
@@ -102,7 +113,7 @@ def mahalanobis(x, mean, covariance):
     s2 : ndarray (M,)
         Square of distance from feature means to test points, normalised by
         covariance.
-    
+
     References
     ----------
     [2] - R. DE MAESSCHALCK, et al., The Mahalanobis distance, Chemometrics and
@@ -112,8 +123,9 @@ def mahalanobis(x, mean, covariance):
     """
     x, mean, covariance = np.asarray(x), np.asarray(mean), np.asarray(covariance)
     return np.einsum(
-        '...ij,...ji->...i',
-        x - mean, solve(covariance, (x - mean).swapaxes(-2, -1).conj()),
+        "...ij,...ji->...i",
+        x - mean,
+        solve(covariance, (x - mean).swapaxes(-2, -1).conj()),
     ).real
 
 
@@ -150,7 +162,7 @@ def mardia_test(x, alpha=0.05):
         x = x.reshape(1, -1)
     elif x.ndim > 2:
         raise ValueError(
-            'x must be 2D containing rows of features and columns of observations.'
+            "x must be 2D containing rows of features and columns of observations."
         )
 
     (d, n) = x.shape
@@ -161,10 +173,10 @@ def mardia_test(x, alpha=0.05):
     mean = np.mean(x, axis=1).reshape(-1, 1)
     covr = np.atleast_2d(cov(x))
 
-    a_to_sum = np.einsum('ji,jk', (x - mean).conj(), solve(covr, x - mean))
-    a = 1 / (6 * n) * np.einsum('ij,ij,ij', a_to_sum, a_to_sum, a_to_sum).real
+    a_to_sum = np.einsum("ji,jk", (x - mean).conj(), solve(covr, x - mean))
+    a = 1 / (6 * n) * np.einsum("ij,ij,ij", a_to_sum, a_to_sum, a_to_sum).real
     b = np.sqrt(n / (8 * d * (d + 2))) * (
-        1 / n * np.einsum('ii', a_to_sum**2) - d * (d + 2)
+        1 / n * np.einsum("ii", a_to_sum**2) - d * (d + 2)
     )
     p1 = 1 - chi2.cdf(a, d * (d + 1) * (d + 2) / 6)
     p2 = 2 * (1 - norm.cdf(abs(b)))
@@ -181,7 +193,7 @@ def transform_observations(x, mean, covariance):
     Parameters
     ----------
     x : ndarray (M, 1, N)
-        N-feature array of M observations of test points, for which the 
+        N-feature array of M observations of test points, for which the
         transformation will be computed
     mean : ndarray (M, 1, N)
         N-feature means.
@@ -193,7 +205,7 @@ def transform_observations(x, mean, covariance):
     s : ndarray (M, N)
         Vectors from the origin in the basis defined by the multivariate normal
         distribution.
-    
+
     Examples
     --------
     Say we have a test point `x`, which is being compared to a distribution
@@ -208,7 +220,7 @@ def transform_observations(x, mean, covariance):
     ...     np.dot(s, s.T)
     ... )
     ```
-    
+
     We can test multiple points against the same distribution
     ```
     >>> test_points = 2 * np.random.rand(3, 1, 2) - 1
@@ -221,7 +233,7 @@ def transform_observations(x, mean, covariance):
     ```
     Note that the same behaviour will be found if `mu` has shape `(1, 1, N)`
     and `cov` has shape `(1, N, N)`.
-    
+
     We can also test multiple points against multiple distributions
     ```
     >>> eg_mean = 2 * np.random.rand(3, 1, 2) - 1
@@ -236,7 +248,4 @@ def transform_observations(x, mean, covariance):
     ```
     """
     x, mean, covariance = np.asarray(x), np.asarray(mean), np.asarray(covariance)
-    return np.einsum(
-        '...ij,...ji->...i',
-        x - mean, cholesky(inv(covariance))
-    ).real
+    return np.einsum("...ij,...ji->...i", x - mean, cholesky(inv(covariance))).real

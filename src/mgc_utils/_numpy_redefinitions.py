@@ -19,7 +19,9 @@ autocorrelate : Take a single input and correlate, but also do the 1/N
                 
 """
 __all__ = [
-    '_inputs_swap_needed', '_np_conv_ok', '_reverse_and_conj',
+    "_inputs_swap_needed",
+    "_np_conv_ok",
+    "_reverse_and_conj",
 ]
 
 import numpy as np
