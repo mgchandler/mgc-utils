@@ -11,7 +11,7 @@ from scipy.signal import fftconvolve, _sigtools, choose_conv_method
 import warnings
 
 from ._numpy_redefinitions import _inputs_swap_needed, _np_conv_ok, _reverse_and_conj
-from .visualisation import opheim_simpl
+from .vis import opheim_simpl
 
 
 def auc(x, y):

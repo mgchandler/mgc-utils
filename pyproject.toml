@@ -27,9 +27,9 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Documentation = "https://github.com/Matt Chandler/mgc-utils#readme"
-Issues = "https://github.com/Matt Chandler/mgc-utils/issues"
-Source = "https://github.com/Matt Chandler/mgc-utils"
+Documentation = "https://github.com/mgchandler/mgc-utils#readme"
+Issues = "https://github.com/mgchandler/mgc-utils/issues"
+Source = "https://github.com/mgchandler/mgc-utils"
 
 [tool.hatch.version]
 path = "src/mgc_utils/__about__.py"
