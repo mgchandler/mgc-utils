@@ -3,8 +3,9 @@ A set of functions which solve different tasks in visualisation. This may be mat
 often, so it's useful to have them all in one place, or other helper functions.
 """
 __all__ = [
-    "plot_complex_tfm",
     "opheim_simpl",
+    "plot_complex_tfm",
+    "sobel_edge_detector",
 ]
 
 from arim.ut import decibel
@@ -12,6 +13,91 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from warnings import warn
+
+from .stats import convolve
+
+
+def opheim_simpl(x, y, tol):
+    """
+    Performs Opheim path simplification algorithm on (x, y) data. A path
+    contained in advancing `x`, `y` will be simplified by tolerance `tol` with
+    the algorithm:
+    1) Select the first vertex as a `key`.
+    2) Find the first vertex after `key` which is more than distance `tol`
+       away (call it `next`) and links these two vertices with `line`.
+    3) Find the vertices which exist between `key` and `next`. Find the last
+       one which sits within `tol` of `line` found in (2). Alternatively, find
+       the vertex which (when connected to its previous point) forms a segment
+       which has an angle with `line` greater than 90° (to deal with spikes
+       which should typically be preserved). Call it `last`. Remove all points
+       between `key` and `last`.
+    4) Set `key = last` and repeat from (2), until all points are exhausted.
+
+    Parameters
+    ----------
+    x : ndarray[float] (N,)
+        x-coordinates.
+    y : ndarray[float] (N,)
+        y-coordinates.
+    tol : float
+        Magnitude tolerance used to iterate through (x, y).
+
+    Returns
+    -------
+    mask : ndarray[bool] (N,)
+        Mask to be applied to `x` and `y` to remove the relevant data points.
+
+    Notes
+    -----
+    This function is mostly useful for plotting curves which may have a large
+    number of points but are relatively smooth, e.g. the results of the `roc`
+    function. Not all of the data is needed to visually represent it. Consider
+    using this if `matplotlib.pyplot` is really slow at plotting curves with a
+    lot of points.
+
+    """
+    x, y = np.asarray(x), np.asarray(y)
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError("`x` and `y` must be 1-dimensional ndarrays.")
+    if x.shape[0] != y.shape[0]:
+        raise ValueError("`x` and `y` must have the same shape.")
+    mask = np.full(x.shape, False)
+    mask[0], mask[-1] = True, True
+
+    i, N = 0, x.shape[0]
+    while i < N - 2:
+        # Find the first vertex beyond `tol`
+        j = i + 1
+        v = np.asarray([x[j] - x[i], y[j] - y[i]])
+        while j < N and np.linalg.norm(v) <= tol:
+            j = j + 1
+            v = np.asarray([x[j] - x[i], y[j] - y[i]])
+        v = v / np.linalg.norm(v)
+
+        # Unit normal between `i`, `j`.
+        norm = [v[1], -v[0]]
+
+        # Find the last point which is within `tol` of the line connecting
+        # point `i` to point `j`. Alternatively, the last point within a
+        # direction change of pi/2.
+        while j < N - 1:
+            # Perpendicular distance from `i -> j` line
+            v1 = [x[j + 1] - x[i], y[j + 1] - y[i]]
+            d = np.abs(np.dot(norm, v1))
+            if d > tol:
+                break
+
+            # Angle between line and current segment.
+            v2 = [x[j + 1] - x[j], y[j + 1] - y[j]]
+            cos = np.dot(v, v2)
+            if cos <= 0:
+                break
+
+            j += 1
+        i = j
+        mask[i] = True
+
+    return mask
 
 
 def plot_complex_tfm(
@@ -143,84 +229,54 @@ def plot_complex_tfm(
     return
 
 
-def opheim_simpl(x, y, tol):
+def sobel_edge_detector(
+    im,
+    gaussian_vector=[3, 10, 3],
+    derivative_vector=[-1, 0, 1],
+    norm=True,
+):
     """
-    Performs Opheim path simplification algorithm on (x, y) data. A path
-    contained in advancing `x`, `y` will be simplified by tolerance `tol` with
-    the algorithm:
-    1) Select the first vertex as a `key`.
-    2) Find the first vertex after `key` which is more than distance `tol`
-       away (call it `next`) and links these two vertices with `line`.
-    3) Find the vertices which exist between `key` and `next`. Find the last
-       one which sits within `tol` of `line` found in (2). Alternatively, find
-       the vertex which (when connected to its previous point) forms a segment
-       which has an angle with `line` greater than 90° (to deal with spikes
-       which should typically be preserved). Call it `last`. Remove all points
-       between `key` and `last`.
-    4) Set `key = last` and repeat from (2), until all points are exhausted.
+    Compute directional gradient using the Sobel operator. Currently assumes 2D images.
 
     Parameters
     ----------
-    x : ndarray[float] (N,)
-        x-coordinates.
-    y : ndarray[float] (N,)
-        y-coordinates.
-    tol : float
-        Magnitude tolerance used to iterate through (x, y).
+    im : TYPE
+        DESCRIPTION.
+    weight_vector : TYPE, optional
+        DESCRIPTION. The default is [3, 10, 3].
+    direction_vector : TYPE, optional
+        DESCRIPTION. The default is [-1, 0, 1].
 
     Returns
     -------
-    mask : ndarray[bool] (N,)
-        Mask to be applied to `x` and `y` to remove the relevant data points.
-
-    Notes
-    -----
-    This function is mostly useful for plotting curves which may have a large
-    number of points but are relatively smooth, e.g. the results of the `roc`
-    function. Not all of the data is needed to visually represent it. Consider
-    using this if `matplotlib.pyplot` is really slow at plotting curves with a
-    lot of points.
+    None.
 
     """
-    x, y = np.asarray(x), np.asarray(y)
-    if x.ndim != 1 or y.ndim != 1:
-        raise ValueError("`x` and `y` must be 1-dimensional ndarrays.")
-    if x.shape[0] != y.shape[0]:
-        raise ValueError("`x` and `y` must have the same shape.")
-    mask = np.full(x.shape, False)
-    mask[0], mask[-1] = True, True
+    if im.ndim != 2:
+        raise ValueError("`im` must be 2D!")
+    gaussian_vector = np.asarray(gaussian_vector)
+    if gaussian_vector.ndim != 1:
+        raise ValueError("`gaussian_vector` must be 1D!")
+    derivative_vector = np.asarray(derivative_vector)
+    if derivative_vector.ndim != 1:
+        raise ValueError("`derivative_vector` must be 1D!")
+    if gaussian_vector.size != derivative_vector.size:
+        raise ValueError(
+            "`derivative_vector` and `gaussian_vector` must have the same size."
+        )
 
-    i, N = 0, x.shape[0]
-    while i < N - 2:
-        # Find the first vertex beyond `tol`
-        j = i + 1
-        v = np.asarray([x[j] - x[i], y[j] - y[i]])
-        while j < N and np.linalg.norm(v) <= tol:
-            j = j + 1
-            v = np.asarray([x[j] - x[i], y[j] - y[i]])
-        v = v / np.linalg.norm(v)
+    kernel = np.zeros((im.ndim, gaussian_vector.size, derivative_vector.size))
+    kernel[0, :, :] = np.dot(
+        derivative_vector.reshape(-1, 1), gaussian_vector.reshape(1, -1)
+    )
+    kernel[1, :, :] = np.dot(
+        gaussian_vector.reshape(-1, 1), derivative_vector.reshape(1, -1)
+    )
+    if norm:
+        kernel /= np.abs(kernel).sum(axis=tuple(range(1, im.ndim + 1)))[:, None, None]
 
-        # Unit normal between `i`, `j`.
-        norm = [v[1], -v[0]]
+    grad = np.zeros((im.ndim, *im.shape))
+    for dim in range(im.ndim):
+        grad[dim] = convolve(im, kernel[dim], mode="same")
 
-        # Find the last point which is within `tol` of the line connecting
-        # point `i` to point `j`. Alternatively, the last point within a
-        # direction change of pi/2.
-        while j < N - 1:
-            # Perpendicular distance from `i -> j` line
-            v1 = [x[j + 1] - x[i], y[j + 1] - y[i]]
-            d = np.abs(np.dot(norm, v1))
-            if d > tol:
-                break
-
-            # Angle between line and current segment.
-            v2 = [x[j + 1] - x[j], y[j + 1] - y[j]]
-            cos = np.dot(v, v2)
-            if cos <= 0:
-                break
-
-            j += 1
-        i = j
-        mask[i] = True
-
-    return mask
+    return grad
