@@ -10,7 +10,6 @@ __all__ = [
     "correlate",
     "cov",
     "nancov",
-    "roc",
 ]
 
 import numpy as np
@@ -18,7 +17,6 @@ from scipy.signal import fftconvolve, _sigtools, choose_conv_method
 import warnings
 
 from ._numpy_redefinitions import _inputs_swap_needed, _np_conv_ok, _reverse_and_conj
-from .vis import opheim_simpl
 
 
 def auc(x, y):
@@ -339,7 +337,7 @@ def nancov(x, y=None, pseudo=False):
         ).squeeze()
 
 
-def roc(pos, neg, reduce_size=False):
+def roc(pos, neg):
     """
     Compute receiver-operating characteristic curve from known positive and
     negative distributions.
@@ -393,6 +391,16 @@ def roc(pos, neg, reduce_size=False):
     fps : ndarray (M,)
         False positive rate, or the percentage of weighted values in `neg`
         which exceed `x`.
+
+    Notes
+    -----
+    The returned vectors will be the same length as the union of `pos` and `neg` - this
+    may be a crazy large size. If this becomes unmanageable when plotting, see
+    `visualisation.opheim_simple`, e.g.
+    ```
+    >>> mask = opheim_simpl(fps, tps, tol=1e-5)
+    >>> x, tps, fps = x[mask], tps[mask], fps[mask]
+    ```
 
     """
     # Check data
@@ -477,15 +485,5 @@ def roc(pos, neg, reduce_size=False):
     # Ensure that `tps` and `fps` both start at 1 and end at 0.
     tps, fps = np.hstack([1, tps, 0]), np.hstack([1, fps, 0])
     x = np.hstack([x[0], x, x[-1]])
-
-    if reduce_size and x.shape[0] > 10000:
-        try:
-            mask = opheim_simpl(fps, tps, 1e-5)
-        except Exception:
-            try:
-                mask = opheim_simpl(fps, tps, 2e-5)
-            except Exception:
-                mask = np.full(x.shape, True)
-        x, tps, fps = x[mask], tps[mask], fps[mask]
 
     return x, tps, fps

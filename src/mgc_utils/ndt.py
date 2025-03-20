@@ -1,13 +1,14 @@
 """
 Functions relating to NDT, which fall outside the scope of being put into Arim (for whatever reason).
 """
-__all__ = [
-    "ply_orientation",
-]
+__all__ = ["ply_orientation"]
 
 import numpy as np
+import warnings
+
 from .hypothesis_testing import mahalanobis
 from .stats import convolve
+from .vis import opheim_simpl, sobel_edge_detector
 
 
 def ply_orientation(grid, tfm, p=0.4e-3):
@@ -86,26 +87,30 @@ def ply_orientation(grid, tfm, p=0.4e-3):
     sin_smoothed = convolve(sin, g1, mode="same")
     cos_smoothed = convolve(cos, g1, mode="same")
 
-    # Compute derivatives:
-    if tfm.ndim == 2:
-        d = np.asarray([-1, 0, 1])
-        s = np.asarray([3, 10, 3])
-        # Could probably automate this better.
-        scharr_kern = np.zeros((2, 3, 3))
-        scharr_kern[0, :, :] = np.dot(d.reshape(-1, 1), s.reshape(1, -1)) / 32
-        scharr_kern[1, :, :] = np.dot(s.reshape(-1, 1), d.reshape(1, -1)) / 32
-    elif tfm.ndim == 3:
-        raise NotImplementedError(
-            "3D implementation not yet working - need to work out the Scharr kernel in 3D."
-        )
-        # d = np.asarray([0])
-        # s = np.asarray([0])
-        # scharr_kern = np.zeros((3, 3, 3, 3))
-    grad = np.zeros((tfm.ndim, *tfm.shape))
-    for dim in range(tfm.ndim):
-        grad[dim] = cos_smoothed * convolve(
-            sin_smoothed, scharr_kern[dim], mode="same"
-        ) - sin_smoothed * convolve(cos_smoothed, scharr_kern[dim], mode="same")
+    grad = cos_smoothed * sobel_edge_detector(
+        sin_smoothed
+    ) - sin_smoothed * sobel_edge_detector(cos_smoothed)
+
+    # # Compute derivatives:
+    # if tfm.ndim == 2:
+    #     d = np.asarray([-1, 0, 1])
+    #     s = np.asarray([3, 10, 3])
+    #     # Could probably automate this better.
+    #     scharr_kern = np.zeros((2, 3, 3))
+    #     scharr_kern[0, :, :] = np.dot(d.reshape(-1, 1), s.reshape(1, -1)) / 32
+    #     scharr_kern[1, :, :] = np.dot(s.reshape(-1, 1), d.reshape(1, -1)) / 32
+    # elif tfm.ndim == 3:
+    #     raise NotImplementedError(
+    #         "3D implementation not yet working - need to work out the Scharr kernel in 3D."
+    #     )
+    #     # d = np.asarray([0])
+    #     # s = np.asarray([0])
+    #     # scharr_kern = np.zeros((3, 3, 3, 3))
+    # grad = np.zeros((tfm.ndim, *tfm.shape))
+    # for dim in range(tfm.ndim):
+    #     grad[dim] = cos_smoothed * convolve(
+    #         sin_smoothed, scharr_kern[dim], mode="same"
+    #     ) - sin_smoothed * convolve(cos_smoothed, scharr_kern[dim], mode="same")
 
     # Create structure tensor
     structure = grad.reshape(tfm.ndim, 1, *tfm.shape) * grad.reshape(
