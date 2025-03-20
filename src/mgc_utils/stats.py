@@ -2,6 +2,7 @@
 A set of functions performing various statistical tasks. Note that some of these are redefinitions from numpy or scipy,
 which have been edited to add in some features (most commonly, adding an `axes` parameter).
 """
+
 __all__ = [
     "auc",
     "autocorrelate",
@@ -282,7 +283,7 @@ def cov(m, varaxis=0, obsaxis=1, dtype=None, pseudo=False):
     return c.squeeze()
 
 
-def nancov(x, y=None):
+def nancov(x, y=None, pseudo=False):
     """
     A method to compute covariance which does not take nan values into account.
     This is not guaranteed to be any better or worse than the regular cov
@@ -312,17 +313,30 @@ def nancov(x, y=None):
     if y.ndim <= 1:
         y = y.reshape(1, -1)
 
-    return np.nanmean(
-        (
-            (x - np.nanmean(x, axis=1).reshape(-1, 1)).reshape(
-                x.shape[0], 1, x.shape[1]
-            )
-            * (y - np.nanmean(y, axis=1).reshape(-1, 1))
-            .reshape(1, y.shape[0], y.shape[1])
-            .conj()
-        ),
-        axis=-1,
-    ).squeeze()
+    if pseudo:
+        return np.nanmean(
+            (
+                (x - np.nanmean(x, axis=1).reshape(-1, 1)).reshape(
+                    x.shape[0], 1, x.shape[1]
+                )
+                * (y - np.nanmean(y, axis=1).reshape(-1, 1)).reshape(
+                    1, y.shape[0], y.shape[1]
+                )
+            ),
+            axis=-1,
+        ).squeeze()
+    else:
+        return np.nanmean(
+            (
+                (x - np.nanmean(x, axis=1).reshape(-1, 1)).reshape(
+                    x.shape[0], 1, x.shape[1]
+                )
+                * (y - np.nanmean(y, axis=1).reshape(-1, 1))
+                .reshape(1, y.shape[0], y.shape[1])
+                .conj()
+            ),
+            axis=-1,
+        ).squeeze()
 
 
 def roc(pos, neg, reduce_size=False):
